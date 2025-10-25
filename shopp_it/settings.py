@@ -29,10 +29,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-bhjma%1f4mb85(r0jw9!^bw4f+e+r-aax5im5af9@9t99)ss0&'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Determine if we're on Render
+IS_RENDER = os.getenv('RENDER', 'false').lower() == 'true'
 
-ALLOWED_HOSTS = ["myshop-api-19wx.onrender.com", "localhost", "127.0.0.1"]
+# Security settings for production
+if IS_RENDER:
+    DEBUG = False
+    # Ensure you use the correct domain here
+    ALLOWED_HOSTS = [os.getenv('RENDER_EXTERNAL_HOSTNAME', 'my-shop-app-c1kx.onrender.com')]
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+else:
+    DEBUG = True
+    ALLOWED_HOSTS = ["my-shop-app-c1kx.onrender.com", "localhost", "127.0.0.1" ]
 
 
 
@@ -185,6 +194,3 @@ PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID', '')
 PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET', '')
 
 REACT_=BASE_URL=os.getenv("REACT_BASE_URL","http://localhost:5173")
-
-
-
