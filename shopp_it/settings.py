@@ -82,12 +82,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5174",
     "http://127.0.0.1:5174",
     "http://localhost:5175",
-    "http://127.0.0.1:5175"
+    "http://127.0.0.1:5175",
+    "https://new-shop-zvmq.onrender.com"
 ]
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://[\w-]+\.onrender\.com$",
-    r"^https://[\w-]+-[\w-]+\.onrender\.com$",
-]
+
+
+# TEMPORARY: Allow all origins for testing
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Allow credentials if needed for session/cookie authentication
 CORS_ALLOW_CREDENTIALS = True
