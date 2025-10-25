@@ -88,6 +88,7 @@ def initiate_flutterwave_payment(request):
             'amount': str(grand_total),
             'currency': 'USD',
             'redirect_url': redirect_url,
+            'payment_options': 'card,banktransfer,ussd',
             'customer': {
                 'email': request.user.email or f"{request.user.username}@example.com",
                 'name': request.user.get_full_name() or request.user.username,
@@ -121,11 +122,21 @@ def initiate_flutterwave_payment(request):
         
         if response.status_code == 200:
             data = response.json()
+            print(f"   - Flutterwave Response Data: {data}")
             if data.get('status') == 'success':
                 payment_link = data.get('data', {}).get('link')
+                print(f"   - Payment Link: {payment_link}")
                 return Response({'payment_link': payment_link})
-        
-        return Response({'error': 'Failed to initiate payment'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                error_msg = data.get('message', 'Payment initiation failed')
+                print(f"   ❌ Flutterwave Error: {error_msg}")
+                return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            error_data = response.json() if response.text else {}
+            error_msg = error_data.get('message', f'HTTP {response.status_code} error')
+            print(f"   ❌ Flutterwave HTTP Error: {error_msg}")
+            print(f"   ❌ Response: {error_data}")
+            return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
