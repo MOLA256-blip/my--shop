@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.conf import settings
 from .models import Product
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -11,8 +12,11 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            # Return the correct URL without duplicate /img/
-            return self.context['request'].build_absolute_uri(f'/img/{obj.image.name}')
+            # Return the full absolute URL for the image
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
         return None
 
 class DetailProductSerializer(serializers.ModelSerializer):

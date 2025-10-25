@@ -67,6 +67,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    'shopp_it.middleware.MediaFileMiddleware',  # Custom middleware for media files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -159,18 +160,33 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
-MEDIA_URL = '/img/'
+
+# Media files configuration
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
-WHITENOISE_ROOT = MEDIA_ROOT
+
+# WhiteNoise configuration for static files
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'core.CustomUser'
+
+# Serve media files with WhiteNoise in production
+WHITENOISE_AUTOREFRESH = True if not IS_RENDER else False
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_MIMETYPES = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.svg': 'image/svg+xml',
+}
 
 # REST Framework settings
 REST_FRAMEWORK = {
