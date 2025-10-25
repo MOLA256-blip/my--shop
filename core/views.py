@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -80,12 +80,15 @@ def initiate_flutterwave_payment(request):
             status='pending'
         )
         
+        # Get the backend URL for redirect
+        backend_url = request.build_absolute_uri('/').rstrip('/')
+        
         # Prepare Flutterwave payload
         payload = {
             'tx_ref': tx_ref,
             'amount': str(grand_total),
             'currency': 'USD',
-            'redirect_url': f"{settings.FRONTEND_BASE_URL}/payment/status",
+            'redirect_url': f"{backend_url}/api/payments/flutterwave/verify/",
             'customer': {
                 'email': request.user.email or f"{request.user.username}@example.com",
                 'name': request.user.get_full_name() or request.user.username,
@@ -120,7 +123,89 @@ def initiate_flutterwave_payment(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# Flutterwave Payment Callback
+# Flutterwave Payment Verification (handles redirect from Flutterwave)
+@api_view(['GET'])
+def flutterwave_verify(request):
+    """
+    This endpoint handles the redirect from Flutterwave after payment.
+    Flutterwave sends: status, tx_ref, transaction_id as query parameters
+    """
+    try:
+        status_param = request.GET.get('status')
+        tx_ref = request.GET.get('tx_ref')
+        transaction_id = request.GET.get('transaction_id')
+        
+        if not all([status_param, tx_ref, transaction_id]):
+            # Redirect to frontend with error
+            return redirect(f"{settings.FRONTEND_BASE_URL}/payment/failed?error=missing_parameters")
+        
+        # Get transaction
+        try:
+            transaction = Transaction.objects.get(transaction_id=tx_ref)
+        except Transaction.DoesNotExist:
+            return redirect(f"{settings.FRONTEND_BASE_URL}/payment/failed?error=transaction_not_found")
+        
+        # Verify payment with Flutterwave
+        headers = {
+            'Authorization': f'Bearer {settings.FLUTTERWAVE_SECRET_KEY}',
+        }
+        
+        verify_response = requests.get(
+            f'https://api.flutterwave.com/v3/transactions/{transaction_id}/verify',
+            headers=headers
+        )
+        
+        if verify_response.status_code == 200:
+            verify_data = verify_response.json()
+            
+            if verify_data.get('status') == 'success':
+                data = verify_data.get('data', {})
+                
+                # Check if payment was successful
+                if (data.get('status') == 'successful' and 
+                    Decimal(str(data.get('amount'))) == transaction.amount and
+                    data.get('currency') == transaction.currency):
+                    
+                    # Update transaction
+                    transaction.status = 'successful'
+                    transaction.response_data = verify_data
+                    transaction.save()
+                    
+                    # Create order
+                    cart = transaction.cart
+                    order = Order.objects.create(
+                        user=transaction.user,
+                        transaction=transaction,
+                        total=transaction.amount,
+                        status='completed'
+                    )
+                    
+                    # Create order items
+                    for item in cart.items.all():
+                        OrderItem.objects.create(
+                            order=order,
+                            product_name=item.product.name,
+                            product_image=item.product.image.url if item.product.image else '',
+                            quantity=item.quantity,
+                            unit_price=item.product.price
+                        )
+                    
+                    # Mark cart as paid
+                    cart.paid = True
+                    cart.save()
+                    
+                    # Redirect to frontend success page
+                    return redirect(f"{settings.FRONTEND_BASE_URL}/payment/success?order_id={order.id}")
+        
+        transaction.status = 'failed'
+        transaction.save()
+        return redirect(f"{settings.FRONTEND_BASE_URL}/payment/failed?error=verification_failed")
+        
+    except Exception as e:
+        return redirect(f"{settings.FRONTEND_BASE_URL}/payment/failed?error={str(e)}")
+
+
+# Flutterwave Payment Callback (webhook - for backend notifications)
 @api_view(['POST'])
 def flutterwave_callback(request):
     try:
