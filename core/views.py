@@ -81,11 +81,13 @@ def initiate_flutterwave_payment(request):
         )
         
         # Prepare Flutterwave payload
+        redirect_url = f"{settings.FRONTEND_URL}/payment/status"
+        
         payload = {
             'tx_ref': tx_ref,
             'amount': str(grand_total),
             'currency': 'USD',
-            'redirect_url': f"{settings.FRONTEND_BASE_URL}/payment/status",
+            'redirect_url': redirect_url,
             'customer': {
                 'email': request.user.email or f"{request.user.username}@example.com",
                 'name': request.user.get_full_name() or request.user.username,
@@ -95,6 +97,13 @@ def initiate_flutterwave_payment(request):
                 'description': f'Payment for cart {cart_code}',
             }
         }
+        
+        # Debug logging
+        print(f"🔍 Flutterwave Payment Initiation:")
+        print(f"   - Cart Code: {cart_code}")
+        print(f"   - Amount: ${grand_total}")
+        print(f"   - Redirect URL: {redirect_url}")
+        print(f"   - Transaction ID: {tx_ref}")
         
         headers = {
             'Authorization': f'Bearer {settings.FLUTTERWAVE_SECRET_KEY}',
@@ -107,6 +116,8 @@ def initiate_flutterwave_payment(request):
             json=payload,
             headers=headers
         )
+        
+        print(f"   - Flutterwave Response Status: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
@@ -210,7 +221,14 @@ def flutterwave_callback(request):
         tx_ref = request.data.get('tx_ref')
         transaction_id = request.data.get('transaction_id')
         
+        # Debug logging
+        print(f"🔍 Flutterwave Callback Received:")
+        print(f"   - Status: {status_param}")
+        print(f"   - TX Ref: {tx_ref}")
+        print(f"   - Transaction ID: {transaction_id}")
+        
         if not all([status_param, tx_ref, transaction_id]):
+            print(f"   ❌ Missing parameters!")
             return Response({'success': False, 'message': 'Missing parameters'}, 
                           status=status.HTTP_400_BAD_REQUEST)
         
@@ -270,6 +288,8 @@ def flutterwave_callback(request):
                     cart.paid = True
                     cart.save()
                     
+                    print(f"   ✅ Payment verified successfully! Order ID: {order.id}")
+                    
                     return Response({
                         'success': True,
                         'message': 'Payment verified successfully',
@@ -281,11 +301,13 @@ def flutterwave_callback(request):
                         }
                     })
         
+        print(f"   ❌ Payment verification failed")
         transaction.status = 'failed'
         transaction.save()
         return Response({'success': False, 'message': 'Payment verification failed'})
         
     except Exception as e:
+        print(f"   ❌ Callback error: {str(e)}")
         return Response({'success': False, 'message': str(e)}, 
                       status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
