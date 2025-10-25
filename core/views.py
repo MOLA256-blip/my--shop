@@ -80,15 +80,12 @@ def initiate_flutterwave_payment(request):
             status='pending'
         )
         
-        # Get the backend URL for redirect
-        backend_url = request.build_absolute_uri('/').rstrip('/')
-        
         # Prepare Flutterwave payload
         payload = {
             'tx_ref': tx_ref,
             'amount': str(grand_total),
             'currency': 'USD',
-            'redirect_url': f"{backend_url}/api/payments/flutterwave/verify/",
+            'redirect_url': f"{settings.FRONTEND_BASE_URL}/payment/status",
             'customer': {
                 'email': request.user.email or f"{request.user.username}@example.com",
                 'name': request.user.get_full_name() or request.user.username,
@@ -275,7 +272,13 @@ def flutterwave_callback(request):
                     
                     return Response({
                         'success': True,
-                        'message': 'Payment verified successfully'
+                        'message': 'Payment verified successfully',
+                        'order': {
+                            'id': order.id,
+                            'total': str(transaction.amount),
+                            'transaction_id': transaction_id,
+                            'created_at': order.created_at.isoformat()
+                        }
                     })
         
         transaction.status = 'failed'
