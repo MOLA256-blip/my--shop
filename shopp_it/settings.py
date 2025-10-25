@@ -87,12 +87,33 @@ CORS_ALLOWED_ORIGINS = [
     "https://new-shop-zvmq.onrender.com"
 ]
 
-
-# TEMPORARY: Allow all origins for testing
-CORS_ORIGIN_ALLOW_ALL = True
+# Allow all origins for development and production
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Allow credentials if needed for session/cookie authentication
 CORS_ALLOW_CREDENTIALS = True
+
+# Additional CORS headers
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 ROOT_URLCONF = 'shopp_it.urls'
 
