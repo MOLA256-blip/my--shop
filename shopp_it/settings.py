@@ -184,3 +184,7 @@ PAYPAL_MODE = os.getenv('PAYPAL_MODE', 'sandbox')  # 'sandbox' or 'live'
 PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID', '')
 PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET', '')
 
+REACT_=BASE_URL=os.getenv("REACT_BASE_URL","http://localhost:5173")
+
+
+

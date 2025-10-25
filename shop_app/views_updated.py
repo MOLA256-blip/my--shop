@@ -8,6 +8,10 @@ from .models import Product, Cart, CartItem
 from .serializers import ProductSerializer, CartItemSerializer
 from django.db.models import Q
 from django.utils.crypto import get_random_string
+from django.conf import settings
+
+
+BASE_URL = settings.REACT_BASE_URL
 
 
 class HomeView(APIView):
