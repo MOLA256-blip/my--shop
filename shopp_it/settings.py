@@ -84,6 +84,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5175",
     "http://127.0.0.1:5175"
 ]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://[\w-]+\.onrender\.com$",
+    r"^https://[\w-]+-[\w-]+\.onrender\.com$",
+]
 
 # Allow credentials if needed for session/cookie authentication
 CORS_ALLOW_CREDENTIALS = True
