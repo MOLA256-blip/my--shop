@@ -2,6 +2,22 @@
 
 from django.db import migrations, models
 
+from shop_app.models import Product
+
+
+def create_product_table(apps, schema_editor):
+    table_names = schema_editor.connection.introspection.table_names()
+    if Product._meta.db_table in table_names:
+        return
+    schema_editor.create_model(Product)
+
+
+def drop_product_table(apps, schema_editor):
+    table_names = schema_editor.connection.introspection.table_names()
+    if Product._meta.db_table not in table_names:
+        return
+    schema_editor.delete_model(Product)
+
 
 class Migration(migrations.Migration):
 
@@ -12,16 +28,23 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='Product',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
-                ('slug', models.SlugField(blank=True, null=True)),
-                ('image', models.ImageField(upload_to='')),
-                ('description', models.TextField(blank=True, null=True)),
-                ('price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('category', models.CharField(blank=True, choices=[('Electronics', 'Electronics'), ('Clothing', 'Clothing'), ('Groceries', 'Groceries')], max_length=15, null=True)),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(create_product_table, drop_product_table),
+            ],
+            state_operations=[
+                migrations.CreateModel(
+                    name='Product',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('name', models.CharField(max_length=100)),
+                        ('slug', models.SlugField(blank=True, null=True)),
+                        ('image', models.ImageField(upload_to='')),
+                        ('description', models.TextField(blank=True, null=True)),
+                        ('price', models.DecimalField(decimal_places=2, max_digits=10)),
+                        ('category', models.CharField(blank=True, choices=[('Electronics', 'Electronics'), ('Clothing', 'Clothing'), ('Groceries', 'Groceries')], max_length=15, null=True)),
+                    ],
+                ),
             ],
         ),
     ]
