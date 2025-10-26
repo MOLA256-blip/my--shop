@@ -32,13 +32,13 @@ def test_backend_config():
     try:
         frontend_url = settings.FRONTEND_URL
         if frontend_url:
-            print(f"   [OK] FRONTEND_URL: {frontend_url}")
+            print(f"   ✅ FRONTEND_URL: {frontend_url}")
             tests_passed += 1
         else:
-            print(f"   [FAIL] FRONTEND_URL is empty!")
+            print(f"   ❌ FRONTEND_URL is empty!")
             tests_failed += 1
     except AttributeError:
-        print(f"   [FAIL] FRONTEND_URL not found in settings!")
+        print(f"   ❌ FRONTEND_URL not found in settings!")
         tests_failed += 1
     
     # Test 2: Check FRONTEND_BASE_URL
@@ -46,13 +46,13 @@ def test_backend_config():
     try:
         frontend_base_url = settings.FRONTEND_BASE_URL
         if frontend_base_url:
-            print(f"   [OK] FRONTEND_BASE_URL: {frontend_base_url}")
+            print(f"   ✅ FRONTEND_BASE_URL: {frontend_base_url}")
             tests_passed += 1
         else:
-            print(f"   [FAIL] FRONTEND_BASE_URL is empty!")
+            print(f"   ❌ FRONTEND_BASE_URL is empty!")
             tests_failed += 1
     except AttributeError:
-        print(f"   [FAIL] FRONTEND_BASE_URL not found in settings!")
+        print(f"   ❌ FRONTEND_BASE_URL not found in settings!")
         tests_failed += 1
     
     # Test 3: Check Flutterwave keys
@@ -62,20 +62,20 @@ def test_backend_config():
         fw_public = settings.FLUTTERWAVE_PUBLIC_KEY
         
         if fw_secret and fw_secret.startswith('FLWSECK_TEST-'):
-            print(f"   [OK] FLUTTERWAVE_SECRET_KEY: {fw_secret[:20]}...")
+            print(f"   ✅ FLUTTERWAVE_SECRET_KEY: {fw_secret[:20]}...")
             tests_passed += 1
         else:
-            print(f"   [FAIL] FLUTTERWAVE_SECRET_KEY invalid or missing!")
+            print(f"   ❌ FLUTTERWAVE_SECRET_KEY invalid or missing!")
             tests_failed += 1
             
         if fw_public and fw_public.startswith('FLWPUBK_TEST-'):
-            print(f"   [OK] FLUTTERWAVE_PUBLIC_KEY: {fw_public[:20]}...")
+            print(f"   ✅ FLUTTERWAVE_PUBLIC_KEY: {fw_public[:20]}...")
             tests_passed += 1
         else:
-            print(f"   [FAIL] FLUTTERWAVE_PUBLIC_KEY invalid or missing!")
+            print(f"   ❌ FLUTTERWAVE_PUBLIC_KEY invalid or missing!")
             tests_failed += 1
     except AttributeError as e:
-        print(f"   [FAIL] Flutterwave keys not found: {e}")
+        print(f"   ❌ Flutterwave keys not found: {e}")
         tests_failed += 2
     
     # Test 4: Check CORS settings
@@ -83,14 +83,14 @@ def test_backend_config():
     try:
         cors_origins = settings.CORS_ALLOWED_ORIGINS
         if 'http://localhost:5173' in cors_origins or settings.CORS_ALLOW_ALL_ORIGINS:
-            print(f"   [OK] CORS configured for localhost:5173")
+            print(f"   ✅ CORS configured for localhost:5173")
             tests_passed += 1
         else:
-            print(f"   [WARN] CORS may not allow localhost:5173")
+            print(f"   ⚠️  CORS may not allow localhost:5173")
             print(f"      Allowed origins: {cors_origins}")
             tests_failed += 1
     except AttributeError:
-        print(f"   [FAIL] CORS settings not found!")
+        print(f"   ❌ CORS settings not found!")
         tests_failed += 1
     
     # Test 5: Check if views are importable
@@ -98,20 +98,20 @@ def test_backend_config():
     try:
         from core import views
         if hasattr(views, 'initiate_flutterwave_payment'):
-            print(f"   [OK] initiate_flutterwave_payment found")
+            print(f"   ✅ initiate_flutterwave_payment found")
             tests_passed += 1
         else:
-            print(f"   [FAIL] initiate_flutterwave_payment not found!")
+            print(f"   ❌ initiate_flutterwave_payment not found!")
             tests_failed += 1
             
         if hasattr(views, 'flutterwave_callback'):
-            print(f"   [OK] flutterwave_callback found")
+            print(f"   ✅ flutterwave_callback found")
             tests_passed += 1
         else:
-            print(f"   [FAIL] flutterwave_callback not found!")
+            print(f"   ❌ flutterwave_callback not found!")
             tests_failed += 1
     except Exception as e:
-        print(f"   [FAIL] Error importing views: {e}")
+        print(f"   ❌ Error importing views: {e}")
         tests_failed += 2
     
     # Test 6: Check database
@@ -120,29 +120,29 @@ def test_backend_config():
         from django.db import connection
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
-        print(f"   [OK] Database connection successful")
+        print(f"   ✅ Database connection successful")
         tests_passed += 1
     except Exception as e:
-        print(f"   [FAIL] Database connection failed: {e}")
+        print(f"   ❌ Database connection failed: {e}")
         tests_failed += 1
     
     # Summary
     print("\n" + "=" * 60)
-    print("Test Summary")
+    print("📊 Test Summary")
     print("=" * 60)
-    print(f"[OK] Tests Passed: {tests_passed}")
-    print(f"[FAIL] Tests Failed: {tests_failed}")
-    print(f"Success Rate: {(tests_passed / (tests_passed + tests_failed) * 100):.1f}%")
+    print(f"✅ Tests Passed: {tests_passed}")
+    print(f"❌ Tests Failed: {tests_failed}")
+    print(f"📈 Success Rate: {(tests_passed / (tests_passed + tests_failed) * 100):.1f}%")
     
     if tests_failed == 0:
-        print("\n[SUCCESS] All tests passed! Backend is ready!")
-        print("\nNext Steps:")
+        print("\n🎉 All tests passed! Backend is ready!")
+        print("\n📝 Next Steps:")
         print("   1. Start backend: python manage.py runserver")
         print("   2. Start frontend: cd ../---shoppit_app && npm run dev")
         print("   3. Test payment flow")
     else:
-        print("\n[WARNING] Some tests failed. Please fix the issues above.")
-        print("\nCommon Fixes:")
+        print("\n⚠️  Some tests failed. Please fix the issues above.")
+        print("\n📝 Common Fixes:")
         print("   1. Check .env file has all required variables")
         print("   2. Restart Django server after changes")
         print("   3. Run migrations: python manage.py migrate")
