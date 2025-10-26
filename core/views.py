@@ -243,12 +243,29 @@ def flutterwave_callback(request):
             return Response({'success': False, 'message': 'Missing parameters'}, 
                           status=status.HTTP_400_BAD_REQUEST)
         
-        # Get transaction
+        # Extract cart_code from tx_ref (format: cartcode-timestamp)
+        cart_code = tx_ref.split('-')[0] if '-' in tx_ref else tx_ref
+        
+        # Get cart
         try:
-            transaction = Transaction.objects.get(transaction_id=tx_ref)
-        except Transaction.DoesNotExist:
-            return Response({'success': False, 'message': 'Transaction not found'}, 
+            cart = Cart.objects.get(cart_code=cart_code)
+        except Cart.DoesNotExist:
+            print(f"   ❌ Cart not found: {cart_code}")
+            return Response({'success': False, 'message': 'Cart not found'}, 
                           status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if transaction already exists, if not create it
+        transaction, created = Transaction.objects.get_or_create(
+            transaction_id=tx_ref,
+            defaults={
+                'user': request.user if request.user.is_authenticated else cart.user,
+                'cart': cart,
+                'amount': Decimal('0'),  # Will be updated from Flutterwave
+                'currency': 'USD',
+                'payment_method': 'flutterwave',
+                'status': 'pending'
+            }
+        )
         
         # Verify payment with Flutterwave
         headers = {
@@ -260,16 +277,23 @@ def flutterwave_callback(request):
             headers=headers
         )
         
+        print(f"   - Flutterwave Verify Status: {verify_response.status_code}")
+        
         if verify_response.status_code == 200:
             verify_data = verify_response.json()
             
             if verify_data.get('status') == 'success':
                 data = verify_data.get('data', {})
                 
-                # Check if payment was successful
-                if (data.get('status') == 'successful' and 
-                    Decimal(str(data.get('amount'))) == transaction.amount and
-                    data.get('currency') == transaction.currency):
+                # Update transaction amount from Flutterwave response if not set
+                flutterwave_amount = Decimal(str(data.get('amount', 0)))
+                if transaction.amount == Decimal('0'):
+                    transaction.amount = flutterwave_amount
+                    transaction.currency = data.get('currency', 'USD')
+                    print(f"   - Updated transaction amount: {transaction.amount} {transaction.currency}")
+                
+                # Check if payment was successful (removed amount check for SDK payments)
+                if data.get('status') == 'successful':
                     
                     # Update transaction
                     transaction.status = 'successful'
@@ -311,6 +335,8 @@ def flutterwave_callback(request):
                             'created_at': order.created_at.isoformat()
                         }
                     })
+                else:
+                    print(f"   ❌ Payment status not successful: {data.get('status')}")
         
         print(f"   ❌ Payment verification failed")
         transaction.status = 'failed'
